@@ -1,0 +1,143 @@
+{
+  "info": {
+    "name": "CoreAPI Accounts",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Auth - Register",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+         "url": {"raw": "{{base_url}}/api/auth/register/", "host": ["{{base_url}}"], "path": ["api","auth","register",""]},
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"username\": \"mikate\",\n  \"email\": \"mikate@example.com\",\n  \"password\": \"StrongPass123!\",\n  \"first_name\": \"Alice\",\n  \"last_name\": \"Doe\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Auth - Login",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    const responseJson = pm.response.json();",
+              "    if (responseJson.access) {",
+              "        pm.collectionVariables.set('access_token', responseJson.access);",
+              "        console.log('Access token set:', responseJson.access);",
+              "    }",
+              "    if (responseJson.refresh) {",
+              "        pm.collectionVariables.set('refresh_token', responseJson.refresh);",
+              "        console.log('Refresh token set:', responseJson.refresh);",
+              "    }",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "url": {"raw": "{{base_url}}/api/auth/login/", "host": ["{{base_url}}"], "path": ["api","auth","login",""]},
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"mikate@example.com\",\n  \"password\": \"StrongPass123!\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Auth - Token Refresh",
+      "event": [
+        {
+          "listen": "test",
+          "script": {
+            "exec": [
+              "if (pm.response.code === 200) {",
+              "    const responseJson = pm.response.json();",
+              "    if (responseJson.access) {",
+              "        pm.collectionVariables.set('access_token', responseJson.access);",
+              "        console.log('New access token set:', responseJson.access);",
+              "    }",
+              "    if (responseJson.refresh) {",
+              "        pm.collectionVariables.set('refresh_token', responseJson.refresh);",
+              "        console.log('New refresh token set:', responseJson.refresh);",
+              "    }",
+              "}"
+            ],
+            "type": "text/javascript"
+          }
+        }
+      ],
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+        "url": {"raw": "{{base_url}}/api/auth/token/refresh/", "host": ["{{base_url}}"], "path": ["api","auth","token","refresh",""]},
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Auth - Logout (Blacklist Refresh)",
+      "request": {
+        "method": "POST",
+        "header": [
+          {"key": "Content-Type", "value": "application/json"},
+          {"key": "Authorization", "value": "Bearer {{access_token}}"}
+        ],
+         "url": {"raw": "{{base_url}}/api/auth/logout/", "host": ["{{base_url}}"], "path": ["api","auth","logout",""]},
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"refresh\": \"{{refresh_token}}\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Password Reset - Request",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+         "url": {"raw": "{{base_url}}/api/auth/password-reset/request/", "host": ["{{base_url}}"], "path": ["api","auth","password-reset","request",""]},
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"email\": \"mikate@example.com\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Password Reset - Confirm",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+         "url": {"raw": "{{base_url}}/api/auth/password-reset/confirm/", "host": ["{{base_url}}"], "path": ["api","auth","password-reset","confirm",""]},
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"uid\": \"<uidb64>\",\n  \"token\": \"<token>\",\n  \"new_password\": \"NewStrongPassword123!\"\n}"
+        }
+      }
+    },
+    {
+      "name": "Google - Sign In",
+      "request": {
+        "method": "POST",
+        "header": [{"key": "Content-Type", "value": "application/json"}],
+         "url": {"raw": "{{base_url}}/api/auth/google/", "host": ["{{base_url}}"], "path": ["api","auth","google",""]},
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"id_token\": \"{{google_id_token}}\"\n}"
+        }
+      }
+    }
+  ],
+  "variable": [
+    {"key": "base_url", "value": "http://127.0.0.1:8000"},
+    {"key": "access_token", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoiYWNjZXNzIiwiZXhwIjoxNzYxMjEzNjYxLCJpYXQiOjE3NjEyMTI3NjMsImp0aSI6IjYwMDYwZTc5MzA0ZDRiMTA5MzViNDQ0ZWQwNDlhNmQ2IiwidXNlcl9pZCI6IjIifQ.gKXc1zhmGveexk2xtLmNMDahhI-nN0-MlfX-sQxvCvI"},
+    {"key": "refresh_token", "value": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ0b2tlbl90eXBlIjoicmVmcmVzaCIsImV4cCI6MTc2MTgxNzU2MSwiaWF0IjoxNzYxMjEyNzYxLCJqdGkiOiI5N2UzYmYwZGMyOTE0ODUwOWJmMzhlYzZmNmU5YmQ4NiIsInVzZXJfaWQiOiIyIn0.sLRePmUB2r0FGsbAkciCijDPZhK5pvLp-Jii9ckqvjg"},
+    {"key": "google_id_token", "value": ""}
+  ]
+}
