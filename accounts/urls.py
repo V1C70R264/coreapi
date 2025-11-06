@@ -10,6 +10,7 @@ from .views import (
     ChangePasswordView,
     GoogleAuthView,
     TokenRefresh,
+    ProfileView,
 )
 
 app_name = 'accounts'
@@ -31,6 +32,9 @@ urlpatterns = [
     
     # Change Password (Logged In)
     path('auth/change-password/', ChangePasswordView.as_view(), name='change_password'),
+    
+    # Profile
+    path('users/me/', ProfileView.as_view(), name='profile'),
     
     # Google Auth
     path('auth/google/', GoogleAuthView.as_view(), name='google_auth'),

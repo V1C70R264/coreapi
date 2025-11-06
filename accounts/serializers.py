@@ -155,3 +155,36 @@ class GoogleAuthSerializer(serializers.Serializer):
         attrs['google'] = data
         return attrs
 
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    email = serializers.EmailField(read_only=True)
+    avatar = serializers.ImageField(required=False, allow_null=True)
+
+    class Meta:
+        model = User
+        fields = (
+            'id', 'username', 'email', 'first_name', 'last_name', 'avatar',
+        )
+
+    def validate_username(self, value):
+        if not value:
+            return value
+        user = self.instance
+        if user and user.username == value:
+            return value
+        if User.objects.filter(username=value).exists():
+            raise serializers.ValidationError('This username is already taken')
+        return value
+
+    def update(self, instance, validated_data):
+        for field in ['username', 'first_name', 'last_name']:
+            if field in validated_data:
+                setattr(instance, field, validated_data[field])
+
+        # Handle avatar separately to allow clearing with null
+        if 'avatar' in validated_data:
+            avatar = validated_data.get('avatar')
+            instance.avatar = avatar
+
+        instance.save()
+        return instance
