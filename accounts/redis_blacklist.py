@@ -1,7 +1,8 @@
 """
 Redis-based JWT Blacklist Implementation
 Provides faster token blacklisting using Redis instead of database.
-Uses Django's cache connection (django-redis) and avoids parsing URLs manually.
+Uses django-redis when the default cache is Redis; otherwise connects via
+settings.REDIS_URL (works when cache is LocMemCache in development).
 Lazily acquires the Redis client to prevent errors during import/migrations.
 """
 import json
@@ -11,23 +12,25 @@ from django.conf import settings
 
 logger = logging.getLogger(__name__)
 
-
 def _get_redis_client():
-    """Lazily get a Redis client via django-redis; fallback to redis.from_url if needed.
-    This avoids connecting at import time and avoids brittle URL parsing.
-    """
+    # Prefer django-redis when the cache backend is actually Redis.
     try:
         from django_redis import get_redis_connection
-        return get_redis_connection('default')
-    except Exception:
-        # Fallback to direct redis client using LOCATION
-        try:
-            import redis
-            location = settings.CACHES['default']['LOCATION']
-            return redis.from_url(location, decode_responses=True)
-        except Exception as e:
-            logger.error(f"Unable to initialize Redis client: {e}")
-            return None
+
+        return get_redis_connection("default")
+    except Exception as e:
+        logger.debug("django-redis not available for cache 'default': %s", e)
+
+    # Fallback: connect directly using a dedicated REDIS_URL setting.
+    # This works even when the Django cache uses LocMemCache (e.g. in dev).
+    try:
+        import redis
+
+        url = getattr(settings, "REDIS_URL", None) or "redis://127.0.0.1:6379/1"
+        return redis.from_url(url, decode_responses=True)
+    except Exception as e:
+        logger.error("Unable to initialize Redis client from REDIS_URL: %s", e)
+        return None
 
 
 class RedisBlacklist:

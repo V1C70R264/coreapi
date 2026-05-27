@@ -5,9 +5,8 @@ Replaces email link with OTP for better mobile UX
 import secrets
 import logging
 from datetime import datetime, timezone
-from django.conf import settings
 from django.core.cache import cache
-from django.core.mail import send_mail
+from .email_service import send_plain_email
 
 logger = logging.getLogger(__name__)
 
@@ -119,15 +118,17 @@ class OTPPasswordReset:
             subject = 'Password Reset Code'
             message = f'Your password reset code is: {otp}\n\nThis code expires in 5 minutes.\n\nIf you did not request this, please ignore this email.'
             
-            send_mail(
+            result = send_plain_email(
                 subject=subject,
-                message=message,
-                from_email=getattr(settings, 'DEFAULT_FROM_EMAIL', None),
+                body=message,
                 recipient_list=[email],
                 fail_silently=False,
             )
-            logger.info(f"OTP email sent to {email}")
-            return True
+            if result.ok:
+                logger.info("OTP email sent to %s", email)
+                return True
+            logger.error("Failed to send OTP email to %s: %s", email, result.error_code)
+            return False
         except Exception as e:
             logger.error(f"Failed to send OTP email: {e}")
             return False

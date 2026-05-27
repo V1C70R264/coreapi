@@ -1,14 +1,38 @@
-version: '3.8'
-
 services:
   redis:
-    image: redis:7-alpine
-    container_name: coreapi_redis
+    image: redis:latest
+    container_name: coreapi
     ports:
       - "6379:6379"
     volumes:
       - redis_data:/data
     command: redis-server --appendonly yes
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: coreapi-web
+    command: python manage.py runserver 0.0.0.0:8000
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env.development
+    environment:
+      DJANGO_ENV: development
+      REDIS_URL: redis://redis:6379/1
+      USE_LOC_MEM_CACHE: "0"
+    depends_on:
+      redis:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:

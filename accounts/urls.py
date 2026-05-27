@@ -1,3 +1,4 @@
+from django.conf import settings
 from django.urls import path
 from .views import (
     RegisterView,
@@ -5,12 +6,14 @@ from .views import (
     LogoutView,
     PasswordResetRequestView,
     PasswordResetConfirmView,
+    PasswordResetValidateView,
     PasswordResetOTPView,
     PasswordResetConfirmOTPView,
     ChangePasswordView,
     GoogleAuthView,
     TokenRefresh,
     ProfileView,
+    EmailTestView,
 )
 
 app_name = 'accounts'
@@ -22,9 +25,18 @@ urlpatterns = [
     path('auth/logout/', LogoutView.as_view(), name='logout'),
     path('auth/token/refresh/', TokenRefresh.as_view(), name='token_refresh'),
     
-    # Password Reset (Legacy - Email Link)
-    path('auth/password-reset/request/', PasswordResetRequestView.as_view(), name='password_reset_request'),
-    path('auth/password-reset/confirm/', PasswordResetConfirmView.as_view(), name='password_reset_confirm'),
+    # Password reset (Django PasswordResetTokenGenerator + email link)
+    path('auth/password-reset/', PasswordResetRequestView.as_view(), name='password_reset'),
+    path(
+        'auth/password-reset-confirm/',
+        PasswordResetConfirmView.as_view(),
+        name='password_reset_confirm',
+    ),
+    path(
+        'auth/password-reset-validate/',
+        PasswordResetValidateView.as_view(),
+        name='password_reset_validate',
+    ),
     
     # Password Reset (Modern - OTP Based)
     path('auth/password-reset/otp/', PasswordResetOTPView.as_view(), name='password_reset_otp'),
@@ -35,7 +47,13 @@ urlpatterns = [
     
     # Profile
     path('users/me/', ProfileView.as_view(), name='profile'),
+    path('user/', ProfileView.as_view(), name='profile_legacy'),
     
     # Google Auth
     path('auth/google/', GoogleAuthView.as_view(), name='google_auth'),
 ]
+
+if getattr(settings, 'ENABLE_EMAIL_TEST_API', False):
+    urlpatterns.append(
+        path('auth/email/test/', EmailTestView.as_view(), name='email_test'),
+    )

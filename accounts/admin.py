@@ -9,7 +9,8 @@ class CustomUserAdmin(UserAdmin):
     """Production-grade User Admin for millions of users"""
     
     # 1. PERFORMANCE OPTIMIZED DISPLAY
-    list_display = ('username', 'email', 'first_name', 'last_name', 'is_staff', 'is_active', 'date_joined')
+    # Using model properties (full_name, initials) - reusable business logic!
+    list_display = ('username', 'email', 'full_name', 'initials', 'is_staff', 'is_active', 'date_joined')
     list_display_links = ('username', 'email')  # Clickable links for quick access
     
     # 2. ADVANCED FILTERING (Critical for millions of users)
@@ -22,6 +23,7 @@ class CustomUserAdmin(UserAdmin):
     )
     
     # 3. POWERFUL SEARCH (Essential for large datasets)
+    # Note: Can't search on properties directly, but can search on underlying fields
     search_fields = ('username', 'email', 'first_name', 'last_name')
     
     # 4. PERFORMANCE OPTIMIZATIONS
@@ -37,9 +39,13 @@ class CustomUserAdmin(UserAdmin):
             'fields': ('is_active', 'is_staff', 'is_superuser', 'groups', 'user_permissions'),
             'classes': ('collapse',)  # Collapsible section
         }),
+        ('OAuth / IdP', {
+            'fields': ('auth_provider', 'google_sub', 'email_verified', 'last_login_provider'),
+            'classes': ('collapse',),
+        }),
         ('Important dates', {
             'fields': ('last_login', 'date_joined'),
-            'classes': ('collapse',)  # Collapsible section
+            'classes': ('collapse',),
         }),
     )
     
