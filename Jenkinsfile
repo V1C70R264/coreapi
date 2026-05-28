@@ -1,7 +1,6 @@
+:::writing{variant="document" id="62041"}
 pipeline {
 agent any
-
-```
 stages {
 
     stage('Checkout Code') {
@@ -44,6 +43,6 @@ post {
         echo 'Pipeline failed!'
     }
 }
-```
 
 }
+:::
