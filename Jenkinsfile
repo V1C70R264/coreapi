@@ -18,7 +18,10 @@ pipeline {
         stage('Install Dependencies') {
             steps {
                 sh '''
-                    pip3 install -r requirements.txt || pip install -r requirements.txt
+                    python3 -m venv venv
+                    . venv/bin/activate
+                    pip install --upgrade pip
+                    pip install -r requirements.txt
                 '''
             }
         }
@@ -26,7 +29,8 @@ pipeline {
         stage('Run Django Tests') {
             steps {
                 sh '''
-                    python3 manage.py test || python manage.py test
+                    . venv/bin/activate
+                    python manage.py test
                 '''
             }
         }
