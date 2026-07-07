@@ -18,10 +18,28 @@ from django.contrib import admin
 from django.urls import path, include
 from django.conf import settings
 from django.conf.urls.static import static
+from django.http import JsonResponse
+from drf_spectacular.views import SpectacularAPIView, SpectacularSwaggerView
+
+# def home(request):
+#     return JsonResponse({
+#         "status": "success",
+#         "message": "CoreAPI is running"
+#     })
+
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
 
 urlpatterns = [
+    # path('', home),
     path('admin/', admin.site.urls),
-    path('api/', include('accounts.urls')),
+    path("api/schema/", SpectacularAPIView.as_view(), name="schema"),
+    path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger-ui"),
+    path("api/v1/auth/token/", TokenObtainPairView.as_view(), name="token_obtain"),
+    path("api/v1/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
+    path("api/v1/", include("accounts.api.v1.urls")),
 ]
 
 if settings.DEBUG:

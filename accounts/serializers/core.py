@@ -1,6 +1,8 @@
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.utils.translation import gettext_lazy as _
+from drf_spectacular.openapi import OpenApiTypes
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from ..models import User
@@ -48,8 +50,16 @@ class LoginSerializer(serializers.Serializer):
         return TokenService().issue_tokens_for_user(user)
 
 
+class LogoutSerializer(serializers.Serializer):
+    refresh = serializers.CharField()
+
+
 class PasswordResetRequestSerializer(serializers.Serializer):
     email = serializers.EmailField()
+
+
+class EmailTestSerializer(serializers.Serializer):
+    to = serializers.EmailField(required=False)
 
 
 class PasswordResetConfirmSerializer(serializers.Serializer):
@@ -111,44 +121,30 @@ class ChangePasswordSerializer(serializers.Serializer):
 
 class UserProfileSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(read_only=True)
-    avatar = serializers.ImageField(required=False, allow_null=True)
+    avatar = extend_schema_field(OpenApiTypes.BINARY)(
+        serializers.ImageField(required=False, allow_null=True, write_only=True)
+    )
+    remove_avatar = serializers.BooleanField(write_only=True, required=False, default=False)
     phone = serializers.CharField(max_length=20, required=False, allow_blank=True, allow_null=True)
     avatar_url = serializers.SerializerMethodField()
 
     class Meta:
         model = User
         fields = (
-            'id',
-            'username',
-            'email',
-            'first_name',
-            'last_name',
-            'full_name',
-            'initials',
-            'phone',
-            'avatar',
-            'avatar_url',
-            'auth_provider',
-            'email_verified',
-            'last_login_provider',
+            'id', 'username', 'email', 'first_name', 'last_name',
+            'full_name', 'initials', 'phone',
+            'avatar', 'remove_avatar', 'avatar_url',
+            'auth_provider', 'email_verified', 'last_login_provider',
         )
         read_only_fields = (
-            'id',
-            'email',
-            'full_name',
-            'initials',
-            'avatar_url',
-            'auth_provider',
-            'email_verified',
-            'last_login_provider',
+            'id', 'email', 'full_name', 'initials', 'avatar_url',
+            'auth_provider', 'email_verified', 'last_login_provider',
         )
 
     def get_avatar_url(self, obj):
         if obj.avatar:
             request = self.context.get('request')
-            if request:
-                return request.build_absolute_uri(obj.avatar.url)
-            return obj.avatar.url
+            return request.build_absolute_uri(obj.avatar.url) if request else obj.avatar.url
         return None
 
     def validate_username(self, value):
@@ -184,14 +180,19 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return value
 
     def update(self, instance, validated_data):
-        avatar = validated_data.pop('avatar', None)
-        clear_avatar = avatar is None and 'avatar' in validated_data
+        remove_avatar = validated_data.pop('remove_avatar', False)
+        avatar = validated_data.pop('avatar', serializers.empty)
+
+        avatar_provided = avatar is not serializers.empty
+        clear_avatar = remove_avatar and not avatar_provided
+        if not avatar_provided:
+            avatar = None  # sentinel resolved -> "don't touch it" unless clear_avatar is True
 
         instance.update_profile(
-            username=validated_data.get('username'),
-            first_name=validated_data.get('first_name'),
-            last_name=validated_data.get('last_name'),
-            phone=validated_data.get('phone'),
+            username=validated_data.get('username', instance.username),
+            first_name=validated_data.get('first_name', instance.first_name),
+            last_name=validated_data.get('last_name', instance.last_name),
+            phone=validated_data.get('phone', instance.phone),
             avatar=avatar,
             clear_avatar=clear_avatar,
         )

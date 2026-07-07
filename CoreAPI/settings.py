@@ -58,18 +58,27 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt.token_blacklist',
     'storages',
     'accounts',
+    'django_extensions',
+    "drf_spectacular",
+    "cloudinary",
+    "cloudinary_storage",
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
-    'django.contrib.sessions.middleware.SessionMiddleware',
-    'django.middleware.common.CommonMiddleware',
-    'django.middleware.csrf.CsrfViewMiddleware',
-    'django.contrib.auth.middleware.AuthenticationMiddleware',
-    'django.contrib.messages.middleware.MessageMiddleware',
-    'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    
+    "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    "django.contrib.sessions.middleware.SessionMiddleware",
+    "django.middleware.common.CommonMiddleware",
+    "django.middleware.csrf.CsrfViewMiddleware",
+    "django.contrib.auth.middleware.AuthenticationMiddleware",
+    "django.contrib.messages.middleware.MessageMiddleware",
+    "django.middleware.clickjacking.XFrameOptionsMiddleware",
 ]
+
+STATIC_URL = "/static/"
+STATIC_ROOT = "/app/static"
+
+
 
 ROOT_URLCONF = 'CoreAPI.urls'
 
@@ -148,44 +157,6 @@ USE_I18N = True
 USE_TZ = True
 
 
-# Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/5.2/howto/static-files/
-
-STATIC_URL = 'static/'
-# STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
-STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
-
-# Media files (User uploads - Avatars, etc.)
-# Use S3 if AWS credentials are provided, otherwise use local storage
-USE_S3 = env.bool('USE_S3', default=False)
-
-if USE_S3:
-    # S3 Storage Configuration
-    AWS_ACCESS_KEY_ID = env('AWS_ACCESS_KEY_ID', default='')
-    AWS_SECRET_ACCESS_KEY = env('AWS_SECRET_ACCESS_KEY', default='')
-    AWS_STORAGE_BUCKET_NAME = env('AWS_STORAGE_BUCKET_NAME', default='')
-    AWS_S3_REGION_NAME = env('AWS_S3_REGION_NAME', default='us-east-1')
-    AWS_S3_CUSTOM_DOMAIN = env('AWS_S3_CUSTOM_DOMAIN', default='')  # For CloudFront CDN
-    AWS_S3_OBJECT_PARAMETERS = {
-        'CacheControl': 'max-age=86400',  # 1 day cache
-    }
-    AWS_DEFAULT_ACL = 'public-read'
-    AWS_QUERYSTRING_AUTH = False  # Don't add query string auth to URLs
-    
-    # S3 Storage Backend
-    DEFAULT_FILE_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
-    if AWS_S3_CUSTOM_DOMAIN:
-        MEDIA_URL = f'https://{AWS_S3_CUSTOM_DOMAIN}/'
-    else:
-        MEDIA_URL = f'https://{AWS_STORAGE_BUCKET_NAME}.s3.{AWS_S3_REGION_NAME}.amazonaws.com/'
-else:
-    # Local storage (development)
-    MEDIA_URL = env('MEDIA_URL', default='/media/')
-    MEDIA_ROOT = env('MEDIA_ROOT', default=os.path.join(BASE_DIR, 'media'))
-
-# Default primary key field type
-# https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
-
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 # Use custom user model to allow future extensibility
@@ -212,6 +183,39 @@ REST_FRAMEWORK = {
         'anon': '100/minute',
         'user': '1000/minute',
     },
+    "DEFAULT_AUTHENTICATION_CLASSES": (
+        "rest_framework_simplejwt.authentication.JWTAuthentication",
+    ),
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "CoreAPI",
+    "DESCRIPTION": "Core API Documentation",
+    "VERSION": "1.0.0",
+
+    # 🔐 Enable JWT in Swagger UI
+    "SWAGGER_UI_SETTINGS": {
+        "persistAuthorization": True,
+    },
+
+    "SECURITY": [
+        {
+            "BearerAuth": []
+        }
+    ],
+
+    "COMPONENTS": {
+        "securitySchemes": {
+            "BearerAuth": {
+                "type": "http",
+                "scheme": "bearer",
+                "bearerFormat": "JWT",
+            }
+        }
+    },
+    
+    'COMPONENT_SPLIT_REQUEST': True,  # <-- this is the key line
 }
 
 from datetime import timedelta
@@ -281,11 +285,11 @@ else:
 SIMPLE_JWT['BLACKLIST_AFTER_ROTATION'] = env.bool('JWT_BLACKLIST_AFTER_ROTATION', default=True)
 SIMPLE_JWT['ROTATE_REFRESH_TOKENS'] = env.bool('JWT_ROTATE_REFRESH_TOKENS', default=True)
 
+
 # ---------------------------------------------------------------------------
 # Google Sign-In (ID token verification via google-auth)
 # ---------------------------------------------------------------------------
 GOOGLE_CLIENT_ID = env('GOOGLE_CLIENT_ID', default='').strip()
-GOOGLE_CLIENT_SECRET = env('GOOGLE_CLIENT_SECRET', default='')
 GOOGLE_PROJECT_ID = env('GOOGLE_PROJECT_ID', default='')
 
 
@@ -305,12 +309,6 @@ for _legacy_key in ('GOOGLE_WEB_CLIENT_ID', 'GOOGLE_ANDROID_CLIENT_ID', 'GOOGLE_
         _google_audiences.append(_cid)
 
 GOOGLE_OAUTH2_ALLOWED_AUDIENCES = _google_audiences
-# Backwards-compatible name used by older code / docs
-GOOGLE_CLIENT_IDS = list(_google_audiences)
-
-AUTHENTICATION_BACKENDS = (
-    'django.contrib.auth.backends.ModelBackend',
-)
 
 # ---------------------------------------------------------------------------
 # Logging (includes SMTP / mail diagnostics)
@@ -351,5 +349,24 @@ LOGGING = {
             'level': 'DEBUG',
             'propagate': False,
         },
+    },
+}
+
+# ---------------------------------------------------------------------------
+# Cloudinary Storage Configuration
+# ---------------------------------------------------------------------------
+
+CLOUDINARY_STORAGE = {
+    "CLOUD_NAME": env("CLOUDINARY_CLOUD_NAME"),
+    "API_KEY": env("CLOUDINARY_API_KEY"),
+    "API_SECRET": env("CLOUDINARY_API_SECRET"),
+}
+
+STORAGES = {
+    "default": {
+        "BACKEND": "cloudinary_storage.storage.MediaCloudinaryStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
     },
 }

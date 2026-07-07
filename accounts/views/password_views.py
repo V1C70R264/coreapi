@@ -1,12 +1,12 @@
 import logging
-
+from drf_spectacular.utils import extend_schema
 from django.contrib.auth import get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError as DjangoValidationError
 from rest_framework import permissions, status
 from rest_framework.exceptions import ValidationError
 from rest_framework.response import Response
-from rest_framework.views import APIView
+from rest_framework.generics import GenericAPIView
 
 from ..otp_reset import otp_reset
 from ..password_reset_service import (
@@ -35,8 +35,14 @@ _PASSWORD_RESET_REQUEST_MESSAGE = (
 )
 _INVALID_RESET_TOKEN_MESSAGE = "Token is invalid or expired."
 
-
-class PasswordResetRequestView(APIView):
+@extend_schema(
+    tags=["Password Management"],
+    summary="Request Password Reset",
+    description="Send password reset email.",
+    request=PasswordResetRequestSerializer,
+)
+class PasswordResetRequestView(GenericAPIView):
+    serializer_class = PasswordResetRequestSerializer
     """
     Enumeration-safe password reset request.
 
@@ -48,7 +54,7 @@ class PasswordResetRequestView(APIView):
     throttle_scope = "password_reset_request"
 
     def post(self, request):
-        serializer = PasswordResetRequestSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data["email"].strip().lower()
         ip_address = get_client_ip(request)
@@ -117,13 +123,19 @@ class PasswordResetRequestView(APIView):
         secure_reset.log_reset_attempt(email, ip_address, "RESET_REQUEST", True)
         return Response(generic_response, status=status.HTTP_200_OK)
 
-
-class PasswordResetConfirmView(APIView):
+@extend_schema(
+    tags=["Password Management"],
+    summary="Confirm Password Reset",
+    description="Reset password using uid and token.",
+    request=PasswordResetConfirmSerializer,
+)
+class PasswordResetConfirmView(GenericAPIView):
+    serializer_class = PasswordResetConfirmSerializer
     permission_classes = [permissions.AllowAny]
     throttle_scope = "password_reset_confirm"
 
     def post(self, request):
-        serializer = PasswordResetConfirmSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         uid = serializer.validated_data["uid"]
         token = serializer.validated_data["token"]
@@ -168,15 +180,21 @@ class PasswordResetConfirmView(APIView):
         secure_reset.log_reset_attempt(user.email, ip_address, "PASSWORD_RESET_SUCCESS", True)
         return Response({"message": "Password reset successful."}, status=status.HTTP_200_OK)
 
-
-class PasswordResetValidateView(APIView):
+@extend_schema(
+    tags=["Password Management"],
+    summary="Validate Reset Token",
+    description="Validate password reset token before submitting a new password.",
+    request=PasswordResetValidateSerializer,
+)
+class PasswordResetValidateView(GenericAPIView):
+    serializer_class = PasswordResetValidateSerializer
     """Let the frontend check uid/token before collecting a new password."""
 
     permission_classes = [permissions.AllowAny]
     throttle_scope = "password_reset_validate"
 
     def post(self, request):
-        serializer = PasswordResetValidateSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         uid = serializer.validated_data["uid"]
         token = serializer.validated_data["token"]
@@ -184,14 +202,20 @@ class PasswordResetValidateView(APIView):
         validation = validate_reset_token(uid, token)
         return Response({"valid": bool(validation.is_valid and validation.user)})
 
-
-class PasswordResetOTPView(APIView):
+@extend_schema(
+    tags=["Password Management"],
+    summary="Request OTP Reset",
+    description="Send OTP for password reset.",
+    request=PasswordResetOTPSerializer,
+)
+class PasswordResetOTPView(GenericAPIView):
+    serializer_class = PasswordResetOTPSerializer
     """OTP-based password reset (mobile-friendly)."""
 
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        serializer = PasswordResetOTPSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data["email"]
 
@@ -216,14 +240,20 @@ class PasswordResetOTPView(APIView):
 
         return Response(status=status.HTTP_204_NO_CONTENT)
 
-
-class PasswordResetConfirmOTPView(APIView):
+@extend_schema(
+    tags=["Password Management"],
+    summary="Confirm OTP Reset",
+    description="Reset password using OTP.",
+    request=PasswordResetConfirmOTPSerializer,
+)
+class PasswordResetConfirmOTPView(GenericAPIView):
+    serializer_class = PasswordResetConfirmOTPSerializer
     """Confirm password reset with OTP."""
 
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        serializer = PasswordResetConfirmOTPSerializer(data=request.data)
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         email = serializer.validated_data["email"]
         otp = serializer.validated_data["otp"]

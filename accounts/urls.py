@@ -47,7 +47,6 @@ urlpatterns = [
     
     # Profile
     path('users/me/', ProfileView.as_view(), name='profile'),
-    path('user/', ProfileView.as_view(), name='profile_legacy'),
     
     # Google Auth
     path('auth/google/', GoogleAuthView.as_view(), name='google_auth'),

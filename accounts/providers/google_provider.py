@@ -1,3 +1,5 @@
+"""Google ID token verification."""
+
 from __future__ import annotations
 
 import logging
@@ -8,7 +10,6 @@ from google.auth.transport import requests as google_auth_requests
 from google.oauth2 import id_token
 
 from ..utils.oauth_errors import OAuthTokenError
-
 from .base import VerifiedIdentity
 
 logger = logging.getLogger(__name__)
@@ -47,13 +48,12 @@ class GoogleIdentityProvider:
             logger.warning('Rejected Google token: invalid issuer.')
             raise OAuthTokenError('Invalid authentication token.')
 
-        email_raw = payload.get('email')
-        email_verified = _coerce_truthy(payload.get('email_verified'))
         sub = payload.get('sub')
         if not sub:
             logger.warning('Rejected Google token: missing sub.')
             raise OAuthTokenError('Invalid authentication token.')
 
+        email_raw = payload.get('email')
         email_clean: str | None = None
         if isinstance(email_raw, str) and email_raw.strip():
             email_clean = email_raw.strip().lower()
@@ -62,7 +62,7 @@ class GoogleIdentityProvider:
             provider=self.name,
             subject=str(sub),
             email=email_clean,
-            email_verified=email_verified,
+            email_verified=_coerce_truthy(payload.get('email_verified')),
             given_name=(payload.get('given_name') or '')[:150],
             family_name=(payload.get('family_name') or '')[:150],
             picture_url=payload.get('picture'),

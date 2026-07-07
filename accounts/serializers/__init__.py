@@ -14,6 +14,8 @@ from .core import (
     PasswordResetValidateSerializer,
     RegisterSerializer,
     UserProfileSerializer,
+    LogoutSerializer,
+    EmailTestSerializer
 )
 from .oauth import GoogleIdTokenSerializer
 
