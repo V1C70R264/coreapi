@@ -8,3 +8,6 @@ __pycache__
 venv
 .venv
 *.md
+.idea
+.vscode
+db.sqlite3

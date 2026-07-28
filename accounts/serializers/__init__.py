@@ -5,6 +5,8 @@ Split by concern: ``core`` (registration, profile, password flows), ``oauth`` (I
 """
 
 from .core import (
+    AvatarRemoveSerializer,
+    AvatarUploadSerializer,
     ChangePasswordSerializer,
     LoginSerializer,
     PasswordResetConfirmOTPSerializer,
@@ -20,6 +22,8 @@ from .core import (
 from .oauth import GoogleIdTokenSerializer
 
 __all__ = [
+    'AvatarRemoveSerializer',
+    'AvatarUploadSerializer',
     'ChangePasswordSerializer',
     'GoogleIdTokenSerializer',
     'LoginSerializer',

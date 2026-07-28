@@ -14,9 +14,10 @@ from .password_views import (
     PasswordResetRequestView,
     PasswordResetValidateView,
 )
-from .profile_views import ChangePasswordView, EmailTestView, ProfileView
+from .profile_views import AvatarView, ChangePasswordView, EmailTestView, ProfileView
 
 __all__ = [
+    'AvatarView',
     'ChangePasswordView',
     'EmailTestView',
     'GoogleAuthView',

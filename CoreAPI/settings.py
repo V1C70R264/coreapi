@@ -41,7 +41,7 @@ DEBUG = env.bool('DEBUG', default=(DJANGO_ENV == 'development'))
 
 ALLOWED_HOSTS = env.list(
     'ALLOWED_HOSTS',
-    default=['localhost', '127.0.0.1', '0.0.0.0', '192.168.174.21'],
+    default=['localhost', '127.0.0.1', '0.0.0.0', '192.168.1.184'],
 )
 
 
@@ -357,9 +357,9 @@ LOGGING = {
 # ---------------------------------------------------------------------------
 
 CLOUDINARY_STORAGE = {
-    "CLOUD_NAME": env("CLOUDINARY_CLOUD_NAME"),
-    "API_KEY": env("CLOUDINARY_API_KEY"),
-    "API_SECRET": env("CLOUDINARY_API_SECRET"),
+    "CLOUD_NAME": env("CLOUDINARY_CLOUD_NAME", default=""),
+    "API_KEY": env("CLOUDINARY_API_KEY", default=""),
+    "API_SECRET": env("CLOUDINARY_API_SECRET", default=""),
 }
 
 STORAGES = {

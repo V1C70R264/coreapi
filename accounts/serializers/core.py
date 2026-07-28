@@ -142,9 +142,10 @@ class UserProfileSerializer(serializers.ModelSerializer):
         )
 
     def get_avatar_url(self, obj):
+        # Cloudinary storage already returns an absolute URL — do NOT wrap with
+        # build_absolute_uri, which would corrupt it by prepending the request host.
         if obj.avatar:
-            request = self.context.get('request')
-            return request.build_absolute_uri(obj.avatar.url) if request else obj.avatar.url
+            return obj.avatar.url
         return None
 
     def validate_username(self, value):
@@ -197,3 +198,37 @@ class UserProfileSerializer(serializers.ModelSerializer):
             clear_avatar=clear_avatar,
         )
         return instance
+
+
+class AvatarUploadSerializer(serializers.Serializer):
+    """Dedicated serializer for avatar upload (PUT / PATCH on /users/me/avatar/)."""
+
+    avatar = extend_schema_field(OpenApiTypes.BINARY)(
+        serializers.ImageField(
+            required=True,
+            help_text="Profile picture file (JPEG, PNG, WebP, etc.)",
+        )
+    )
+
+    def update(self, instance, validated_data):
+        import cloudinary.uploader
+        new_avatar = validated_data['avatar']
+        # Delete previous Cloudinary asset before uploading the new one
+        if instance.avatar:
+            try:
+                # Extract public_id from the existing Cloudinary URL / name
+                old_public_id = instance.avatar.name
+                if old_public_id:
+                    cloudinary.uploader.destroy(old_public_id)
+            except Exception:
+                pass  # Best-effort cleanup – don't break the upload
+        instance.avatar = new_avatar
+        instance.save(update_fields=['avatar'])
+        return instance
+
+
+class AvatarRemoveSerializer(serializers.Serializer):
+    """Response serializer when avatar is removed."""
+
+    detail = serializers.CharField(read_only=True, default="Avatar removed successfully.")
+    avatar_url = serializers.CharField(read_only=True, allow_null=True, default=None)

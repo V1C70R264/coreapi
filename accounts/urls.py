@@ -1,6 +1,7 @@
 from django.conf import settings
 from django.urls import path
 from .views import (
+    AvatarView,
     RegisterView,
     LoginView,
     LogoutView,
@@ -47,6 +48,7 @@ urlpatterns = [
     
     # Profile
     path('users/me/', ProfileView.as_view(), name='profile'),
+    path('users/me/avatar/', AvatarView.as_view(), name='avatar'),
     
     # Google Auth
     path('auth/google/', GoogleAuthView.as_view(), name='google_auth'),
