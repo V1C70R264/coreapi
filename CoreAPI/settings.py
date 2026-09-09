@@ -62,6 +62,8 @@ INSTALLED_APPS = [
     "drf_spectacular",
     "cloudinary",
     "cloudinary_storage",
+    "products",
+    "django_filters",
 ]
 
 MIDDLEWARE = [
