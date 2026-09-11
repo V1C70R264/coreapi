@@ -64,6 +64,7 @@ INSTALLED_APPS = [
     "cloudinary_storage",
     "products",
     "django_filters",
+    "cart",
 ]
 
 MIDDLEWARE = [

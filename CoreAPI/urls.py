@@ -46,6 +46,7 @@ urlpatterns = [
     path("api/v1/auth/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
     path("api/v1/", include("accounts.api.v1.urls")),
     path("api/v1/", include("products.urls")),
+    path("api/v1/", include("cart.urls")),
 ]
 
 if settings.DEBUG:
