@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     "cart",
     "orders",
     "addresses",
+    "payment",
 ]
 
 MIDDLEWARE = [
@@ -370,6 +371,12 @@ CLOUDINARY_STORAGE = {
     "API_KEY": env("CLOUDINARY_API_KEY", default=""),
     "API_SECRET": env("CLOUDINARY_API_SECRET", default=""),
 }
+
+
+FLUTTERWAVE_SECRET_KEY = os.environ.get('FLUTTERWAVE_SECRET_KEY')
+FLUTTERWAVE_WEBHOOK_SECRET_HASH = os.environ.get('FLUTTERWAVE_WEBHOOK_SECRET_HASH')
+PAYMENT_REDIRECT_URL = os.environ.get('PAYMENT_REDIRECT_URL', 'http://localhost:3000/payment/callback')
+
 
 STORAGES = {
     "default": {
