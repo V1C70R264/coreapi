@@ -1,10 +1,13 @@
 from rest_framework import serializers
 from .models import Product, Category
+from favorites.models import Favorite
+
 
 class CategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
         fields = ['id', 'name', 'description']
+
 
 class ProductSerializer(serializers.ModelSerializer):
     seller = serializers.PrimaryKeyRelatedField(
@@ -20,18 +23,32 @@ class ProductSerializer(serializers.ModelSerializer):
         read_only=True
     )
 
+    is_favorited = serializers.SerializerMethodField()
+
     class Meta:
         model = Product
         fields = [
-            'id', 'name', 'description', 'price', 'stock_quantity', 
-            'category', 'category_details', 'seller', 'image', 'created_at', 'updated_at'
+            'id', 'name', 'description', 'price', 'stock_quantity',
+            'category', 'category_details', 'seller', 'image',
+            'is_favorited', 'created_at', 'updated_at'
         ]
+
+    def get_is_favorited(self, obj):
+        request = self.context.get('request')
+        if request is None or not request.user.is_authenticated:
+            return False
+        return Favorite.objects.filter(user=request.user, product=obj).exists()
+
+    def validate_image(self, value):
+        if not value:
+            raise serializers.ValidationError("An image is required to create a product.")
+        return value
+
     def validate_price(self, value):
         if value <= 0:
             raise serializers.ValidationError("Price must be greater than zero.")
         return value
 
-    # the product name and description must not be the same
     def validate(self, data):
         name = data.get('name', getattr(self.instance, 'name', None))
         description = data.get(
@@ -43,19 +60,3 @@ class ProductSerializer(serializers.ModelSerializer):
             "Product name and description must not be the same."
         )
         return data
-
-    # def validate_stock_quantity(self, value):
-    #     if value <= 0:
-    #         raise serializers.ValidationError("Stock quantity must be a positive integer.")
-    #     return value
-
-    # def validate_name(self, value):
-    #     if not value:
-    #         raise serializers.ValidationError("Name is required.")
-    #     return value
-
-    # def validate_description(self, value):
-    #     if not value:
-    #         raise serializers.ValidationError("Description is required.")
-    #     return value
-

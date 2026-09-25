@@ -56,7 +56,8 @@ from drf_spectacular.utils import extend_schema, extend_schema_view
 )
 class ProductViewSet(viewsets.ModelViewSet):
 
-    queryset = Product.objects.all()
+    # queryset = Product.objects.all()
+    queryset = Product.objects.all().order_by('-created_at')
     serializer_class = ProductSerializer
     pagination_class = ProductPagination
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
@@ -102,7 +103,8 @@ class ProductViewSet(viewsets.ModelViewSet):
     ),
 )
 class CategoryViewSet(viewsets.ModelViewSet):
-    queryset = Category.objects.all()
+    # queryset = Category.objects.all()
+    queryset = Category.objects.all().order_by('name')
     serializer_class = CategorySerializer
 
     def get_permissions(self):

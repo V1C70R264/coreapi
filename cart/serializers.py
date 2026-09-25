@@ -45,51 +45,41 @@ class CartItemSerializer(serializers.ModelSerializer):
         if self.instance is not None:
             if 'product' in data and data['product'] != self.instance.product:
                 raise serializers.ValidationError(
-                    {
-                        "product": "The product cannot be changed once it has been added to the cart."
-                    }
+                    {"product": "The product cannot be changed once it has been added to the cart."}
                 )
 
         quantity = data.get('quantity')
 
         if quantity is None:
             return data
-        
+
         if self.instance is None:
-        
             request = self.context.get('request')
 
-            if not request or not request.user.is_authenticated:
-                return data
+            existing_quantity = 0
+            if request and request.user.is_authenticated:
+                cart = Cart.objects.filter(user=request.user).first()
+                if cart:
+                    existing_item = CartItem.objects.filter(cart=cart, product=product).first()
+                    existing_quantity = existing_item.quantity if existing_item else 0
 
-            cart = Cart.objects.filter(user=request.user).first()
-
-            if cart:
-                existing_item = CartItem.objects.filter(
-                    cart=cart,
-                    product=product
-                ).first()
-
-                existing_quantity = existing_item.quantity if existing_item else 0
-
-                if existing_quantity + quantity > product.stock_quantity:
-                    raise serializers.ValidationError(
-                        {
-                            "quantity": (
-                                f"Only {product.stock_quantity - existing_quantity} "
-                                f"unit(s) of this product are available to add."
-                            )
-                        }
-                    )
-
+            if existing_quantity + quantity > product.stock_quantity:
+                raise serializers.ValidationError(
+                    {
+                        "quantity": (
+                            f"Only {product.stock_quantity - existing_quantity} "
+                            f"unit(s) of this product are available to add."
+                        )
+                    }
+                )
         else:
             if quantity > product.stock_quantity:
                 raise serializers.ValidationError(
                     {
-                         "quantity": (
+                        "quantity": (
                             f"Only {product.stock_quantity} "
                             f"unit(s) of this product are available."
-                )
+                        )
                     }
                 )
 
