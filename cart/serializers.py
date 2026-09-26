@@ -1,9 +1,17 @@
 from rest_framework import serializers
 from .models import Cart, CartItem
+from products.models import Product
+
+class ProductMiniSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product  # adjust to your actual Product model name
+        fields = ['id', 'name', 'price', 'image']  # adjust field names to match your Product model
+
 
 class CartItemSerializer(serializers.ModelSerializer):
 
     total_price = serializers.SerializerMethodField()
+    product_detail = ProductMiniSerializer(source='product', read_only=True)
 
     class Meta:
         model = CartItem
@@ -11,6 +19,7 @@ class CartItemSerializer(serializers.ModelSerializer):
             'id',
             'cart',
             'product',
+            'product_detail',
             'quantity',
             'total_price',
             'added_at',

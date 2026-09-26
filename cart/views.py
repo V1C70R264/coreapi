@@ -35,6 +35,17 @@ class CartViewSet(ModelViewSet):
 
     def get_queryset(self):
         return Cart.objects.filter(user=self.request.user).prefetch_related('items__product')
+
+    def list(self, request, *args, **kwargs):
+        # A user has exactly one cart, so GET /cart/ should return that
+        # single object directly — not a paginated list. get_or_create
+        # also means a brand-new user gets an empty cart object back
+        # instead of an empty `results: []`.
+        cart, _ = Cart.objects.get_or_create(user=request.user)
+        cart = Cart.objects.prefetch_related('items__product').get(pk=cart.pk)
+        serializer = self.get_serializer(cart)
+        return Response(serializer.data)
+
     @extend_schema(
         summary="Clear cart",
         description="Removes all items from the authenticated user's cart while keeping the cart itself.",

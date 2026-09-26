@@ -73,6 +73,17 @@ PRODUCTS = [
         "image_file": "ankara_dress.jpg",
     },
 
+    {
+        "name": "Modern Ankara Dress",
+        "description": "Exciting African Traditional dress",
+        "price": "70000.00",
+        "stock_quantity": 25,
+        "category": "Fashion",
+        "image_file": "ankara_dress2.jpg",
+    },
+
+
+
     # Home & Kitchen
     {
         "name": "Non-stick Frying Pan",
