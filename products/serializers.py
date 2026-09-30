@@ -60,3 +60,8 @@ class ProductSerializer(serializers.ModelSerializer):
             "Product name and description must not be the same."
         )
         return data
+
+class ProductMiniSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Product
+        fields = ['id', 'name', 'price', 'image']

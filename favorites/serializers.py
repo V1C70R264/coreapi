@@ -1,17 +1,14 @@
 from rest_framework import serializers
+from products.serializers import ProductSerializer
 from .models import Favorite
-from products.models import Product
 
 
 class FavoriteSerializer(serializers.ModelSerializer):
-    product_name = serializers.CharField(source='product.name', read_only=True)
-    product_price = serializers.DecimalField(
-        source='product.price', max_digits=10, decimal_places=2, read_only=True
-    )
+    product_detail = ProductSerializer(source='product', read_only=True)
 
     class Meta:
         model = Favorite
-        fields = ['id', 'product', 'product_name', 'product_price', 'created_at']
+        fields = ['id', 'product', 'product_detail', 'created_at']
         read_only_fields = ['id', 'created_at']
 
     def validate_product(self, value):
