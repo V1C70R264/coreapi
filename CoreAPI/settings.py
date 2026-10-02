@@ -70,6 +70,7 @@ INSTALLED_APPS = [
     "payment",
     "favorites",
     "promotions",
+    "notifications",
 ]
 
 MIDDLEWARE = [

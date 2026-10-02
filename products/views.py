@@ -1,14 +1,20 @@
+from datetime import timedelta
+
+from django.db.models import Sum
+from django.utils import timezone
 
 from .serializers import ProductSerializer, CategorySerializer
 from .models import Product, Category
 from rest_framework import viewsets, serializers
+from rest_framework.decorators import action
 from rest_framework.filters import SearchFilter, OrderingFilter
 from .pagination import ProductPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from rest_framework import permissions
-from .filters import ProductFilter 
+from .filters import ProductFilter
 from .permissions import IsSellerOrAdmin
 from drf_spectacular.utils import extend_schema, extend_schema_view
+from orders.models import OrderItem
 
 
 @extend_schema(tags=["Products"])
@@ -66,7 +72,7 @@ class ProductViewSet(viewsets.ModelViewSet):
     ordering_fields = ['name', 'price', 'created_at']
     #setting permissions for the product views 
     def get_permissions(self):
-        if self.action in ['list', 'retrieve']:
+        if self.action in ['list', 'retrieve', 'trending', 'new_sellers']:
             permission_classes = [permissions.AllowAny]
         else:
             permission_classes = [IsSellerOrAdmin]
@@ -74,6 +80,57 @@ class ProductViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         serializer.save(seller=self.request.user)
+
+    @extend_schema(
+        summary="Trending products",
+        description="Returns products ranked by total units sold in the last 7 days.",
+    )
+    @action(detail=False, methods=['get'])
+    def trending(self, request):
+        since = timezone.now() - timedelta(days=7)
+
+        trending_product_ids = (
+            OrderItem.objects
+            .filter(order__created_at__gte=since)
+            .exclude(order__status='cancelled')
+            .values('product_id')
+            .annotate(units_sold=Sum('quantity'))
+            .order_by('-units_sold')
+            .values_list('product_id', flat=True)
+        )
+
+        # Preserve the units_sold ranking order — a plain .filter(id__in=...)
+        # would return results in the database's default order, not by
+        # popularity, so we re-fetch in the exact ranked sequence instead.
+        products_by_id = {
+            p.id: p for p in Product.objects.filter(id__in=trending_product_ids)
+        }
+        ordered_products = [
+            products_by_id[pid] for pid in trending_product_ids if pid in products_by_id
+        ]
+
+        page = self.paginate_queryset(ordered_products)
+        serializer = self.get_serializer(page, many=True)
+        return self.get_paginated_response(serializer.data)
+
+    @extend_schema(
+        summary="Products from new sellers",
+        description="Returns products from sellers whose account was created in the last 90 days.",
+    )
+    @action(detail=False, methods=['get'], url_path='new-sellers')
+    def new_sellers(self, request):
+        since = timezone.now() - timedelta(days=90)
+
+        queryset = (
+            Product.objects
+            .filter(seller__date_joined__gte=since)
+            .order_by('-created_at')
+        )
+
+        page = self.paginate_queryset(queryset)
+        serializer = self.get_serializer(page, many=True)
+        return self.get_paginated_response(serializer.data)
+
 
 @extend_schema(tags=["Categories"])
 @extend_schema_view(
