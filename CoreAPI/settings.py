@@ -71,6 +71,8 @@ INSTALLED_APPS = [
     "favorites",
     "promotions",
     "notifications",
+    "reviews",
+    "stores",
 ]
 
 MIDDLEWARE = [

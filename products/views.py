@@ -15,6 +15,8 @@ from .filters import ProductFilter
 from .permissions import IsSellerOrAdmin
 from drf_spectacular.utils import extend_schema, extend_schema_view
 from orders.models import OrderItem
+from rest_framework.exceptions import PermissionDenied
+from stores.models import Store, StoreStatus
 
 
 @extend_schema(tags=["Products"])
@@ -63,7 +65,7 @@ from orders.models import OrderItem
 class ProductViewSet(viewsets.ModelViewSet):
 
     # queryset = Product.objects.all()
-    queryset = Product.objects.all().order_by('-created_at')
+    queryset = Product.objects.select_related('seller__store').order_by('-created_at')
     serializer_class = ProductSerializer
     pagination_class = ProductPagination
     filter_backends = [DjangoFilterBackend, SearchFilter, OrderingFilter]
@@ -79,6 +81,15 @@ class ProductViewSet(viewsets.ModelViewSet):
         return [permission() for permission in permission_classes]
 
     def perform_create(self, serializer):
+        has_approved_store = Store.objects.filter(
+            owner=self.request.user,
+            status=StoreStatus.APPROVED,
+            is_active=True,
+        ).exists()
+        if not has_approved_store:
+            raise PermissionDenied(
+                "You need an approved store before you can list products."
+            )
         serializer.save(seller=self.request.user)
 
     @extend_schema(
